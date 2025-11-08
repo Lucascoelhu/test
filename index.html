@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulador de Planograma Interativo</title>
+    <title>Simulador de Planograma - Grid Interno e Novas Dimensões</title>
     <style>
         /* --- ESTILOS GERAIS --- */
         body {
@@ -35,31 +35,52 @@
             gap: 12px;
             padding: 10px;
             border: 2px solid #555;
-            background-color: #ccc; /* Cor de fundo da estrutura do display */
+            background-color: #ccc;
         }
 
-        /* --- PRATELEIRAS (O PONTO PRINCIPAL) --- */
+        /* --- PRATELEIRAS COM GRID INTERNO --- */
         .shelf {
             position: relative;
-            border-bottom: 5px solid #a07d58; /* Borda inferior mais escura simula a prateleira */
-            background: #fff; /* Fundo branco para os produtos se destacarem */
+            border-bottom: 5px solid #a07d58;
+            background: #fff;
             height: 120px; /* Altura da prateleira */
-            display: flex;
-            flex-wrap: wrap;
-            gap: 4px; /* Espaço **mais curto** entre os produtos */
             padding: 5px;
-            justify-content: flex-start;
-            align-items: flex-end; /* **MUITO IMPORTANTE:** Alinha produtos ao chão da prateleira */
-            overflow-x: auto; /* Permite rolar horizontalmente se houver muitos produtos */
-            overflow-y: hidden;
             border-radius: 2px;
             box-shadow: inset 0 0 5px rgba(0,0,0,0.05);
+
+            /* CRUCIAL: Grid para o layout interno da prateleira */
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); /* Colunas flexíveis, mínimo de 40px */
+            grid-template-rows: repeat(auto-fill, minmax(30px, 1fr)); /* Linhas flexíveis, mínimo de 30px */
+            gap: 2px; /* Espaçamento entre as "células" */
+            overflow: auto; /* Permite scroll se os itens ultrapassarem */
+        }
+        
+        /* A prateleira em si é a área clicável */
+        .shelf.active {
+            box-shadow: 0 0 0 2px #4CAF50 inset; /* Borda verde suave para indicar onde clicar */
         }
 
-        /* --- CAMPO DE TEXTO CENTRAL (RÓTULO) --- */
+        /* --- CÉLULA (Onde o produto será colocado) --- */
+        .shelf-cell {
+            position: relative; /* Para os itens se posicionarem dentro */
+            width: 100%; /* Ocupa a largura da célula do grid */
+            height: 100%; /* Ocupa a altura da célula do grid */
+            /* border: 1px dashed rgba(0,0,0,0.1); /* Opcional: para visualizar as células */
+            display: flex; /* Para alinhar o item dentro da célula */
+            justify-content: center; /* Centraliza horizontalmente */
+            align-items: flex-end; /* Alinha na parte de baixo da célula */
+        }
+        /* Efeito visual ao passar o mouse */
+        .shelf-cell:hover {
+            background-color: rgba(0,0,0,0.05);
+            cursor: pointer;
+        }
+
+        /* --- CAMPO DE TEXTO (MANTIDO, mas talvez reposicionado) --- */
         .shelf-label {
             position: absolute;
-            top: 5px; /* Mudei para o topo para não bloquear o clique no centro */
+            top: 5px;
             left: 5px;
             width: auto;
             max-width: 95%;
@@ -81,10 +102,12 @@
         /* --- PRODUTOS --- */
         .item {
             border-radius: 3px;
-            cursor: move; /* Indica que é móvel (se implementarmos Drag&Drop depois) */
+            cursor: pointer;
             transition: transform 0.1s, box-shadow 0.2s;
-            position: relative; /* Para garantir alinhamento correto */
-            margin-bottom: 0; /* Garante que não haja margem na base */
+            position: absolute; /* O item é posicionado dentro da CELL */
+            bottom: 0; /* Alinha o item na base da célula */
+            z-index: 5;
+            /* width e height específicos para cada tipo abaixo */
         }
 
         .item:hover {
@@ -92,25 +115,45 @@
             box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
         }
 
-        /* Tipos de produtos e tamanhos mantidos */
+        /* --- TIPOS DE PRODUTOS (NOVAS DIMENSÕES) --- */
+        /* Itens originais */
         .small { width: 25px; height: 35px; background-color: #ffb347; }
         .medium { width: 35px; height: 45px; background-color: #77dd77; }
         .large { width: 45px; height: 55px; background-color: #84b6f4; }
         .tall { width: 30px; height: 60px; background-color: #fdcae1; }
         .wide { width: 55px; height: 35px; background-color: #cbaacb; }
+        
+        /* Novas Variedades */
+        .cereal { width: 50px; height: 90px; background-color: #9b59b6; border: 2px solid #8e44ad;} 
+        .lata { width: 25px; height: 75px; background-color: #e74c3c; border-radius: 50%; } 
+        .recheados { width: 80px; height: 30px; background-color: #f1c40f; border-radius: 6px; } 
+        .cafe { width: 40px; height: 40px; background-color: #6d4c41; border-radius: 50%;} 
+        .frasco { width: 35px; height: 50px; background-color: #1abc9c; border-radius: 50% 50% 0 0;} 
 
-        /* Paleta de produtos */
+        /* NOVOS PRODUTOS FINOS E COMPRIDOS */
+        .thin-tall { width: 20px; height: 80px; background-color: #ff7f50; border: 1px solid #d45d31; } /* Fino e Alto */
+        .thin-wide { width: 70px; height: 20px; background-color: #6a5acd; border: 1px solid #483d8b; } /* Fino e Largo */
+
+        /* Paleta de produtos (MANTIDA) */
         #productPalette {
             display: flex;
             gap: 15px;
             flex-wrap: wrap;
             justify-content: center;
             margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.08);
         }
 
         .palette-item {
             border: 3px solid transparent;
             cursor: pointer;
+            width: 45px;
+            height: 45px;
+            border-radius: 4px;
         }
 
         .palette-item.selected {
@@ -137,9 +180,18 @@
     <div class="palette-item large" data-type="large"></div>
     <div class="palette-item tall" data-type="tall"></div>
     <div class="palette-item wide" data-type="wide"></div>
+    
+    <div class="palette-item cereal" data-type="cereal"></div>
+    <div class="palette-item lata" data-type="lata"></div>
+    <div class="palette-item recheados" data-type="recheados"></div>
+    <div class="palette-item cafe" data-type="cafe"></div>
+    <div class="palette-item frasco" data-type="frasco"></div>
+
+    <div class="palette-item thin-tall" data-type="thin-tall"></div>
+    <div class="palette-item thin-wide" data-type="thin-wide"></div>
 </div>
 
-<h3 style="text-align:center;">Passo 2: Clique em qualquer prateleira para adicionar o produto.</h3>
+<h3 style="text-align:center;">Passo 2: Clique em qualquer SLOT vazio da prateleira para adicionar o produto.</h3>
 
 <div id="shelvesContainer"></div>
 
@@ -175,37 +227,60 @@
             const label = document.createElement('input');
             label.className = 'shelf-label';
             label.type = 'text';
-            label.placeholder = `Seção ${i + 1} (Ex: Café)`;
+            label.placeholder = `Seção ${i + 1}`;
 
             shelf.appendChild(label);
             
-            // Adiciona o produto ao clicar na prateleira
-            shelf.addEventListener('click', (e) => {
-                // Impede a adição de produto se o clique for no campo de texto
-                if (e.target.classList.contains('shelf-label')) return;
-                addProduct(shelf);
-            });
-
+            // Adicionaremos células clicáveis DENTRO da prateleira
+            // Para simular slots fixos. Ex: 10 colunas x 3 linhas de slots
+            const numGridCols = 15; // Quantidade de "slots" horizontais na prateleira
+            const numGridRows = 3;  // Quantidade de "slots" verticais na prateleira
+            
+            for (let r = 0; r < numGridRows; r++) {
+                for (let c = 0; c < numGridCols; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'shelf-cell';
+                    cell.dataset.row = r;
+                    cell.dataset.col = c;
+                    
+                    cell.addEventListener('click', (e) => {
+                        // Impede a adição de produto se o clique for no campo de texto
+                        if (e.target.classList.contains('shelf-label')) return;
+                        addProduct(cell); // Adiciona na CÉLULA
+                    });
+                    shelf.appendChild(cell);
+                }
+            }
             shelvesContainer.appendChild(shelf);
         }
     });
 
-    // Adiciona o produto clicado na prateleira
-    function addProduct(shelf) {
+    /**
+     * Adiciona o produto na célula clicada.
+     * @param {HTMLElement} cell O elemento da célula (div.shelf-cell).
+     */
+    function addProduct(cell) {
         if (!selectedType) {
             alert('Escolha primeiro um tipo de mercadoria na paleta!');
             return;
         }
+        
+        // Verifica se já existe um item nesta célula
+        if (cell.querySelector('.item')) {
+            // alert('Já existe um item nesta posição. Clique nele para remover.');
+            return; // Não adiciona se já houver item
+        }
+
         const item = document.createElement('div');
         item.classList.add('item', selectedType);
         
         // Remove o item se for clicado
         item.addEventListener('click', (e) => {
-            e.stopPropagation(); // Impede que o clique suba para a prateleira
+            e.stopPropagation(); // Impede que o clique suba para a célula
             item.remove();
         });
         
-        shelf.appendChild(item);
+        cell.appendChild(item); // Adiciona o item dentro da CÉLULA
     }
 
     // Inicializa com valores padrão
