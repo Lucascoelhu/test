@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Planograma MEGA</title>
+<title>Planograma Mobile</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
     :root {
         --primary: #2c3e50;
@@ -23,7 +24,7 @@
         margin: 0; padding: 0; 
         height: 100dvh; 
         width: 100vw;
-        overflow: hidden; 
+        overflow: hidden; /* Mantido para controlar o layout principal */
         display: flex; flex-direction: column;
     }
 
@@ -42,7 +43,9 @@
     .header-btns button {
         background: rgba(255,255,255,0.2); border: none; color: white;
         padding: 6px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; margin-left:5px;
+        transition: background 0.2s;
     }
+    .header-btns button:hover { background: rgba(255,255,255,0.3); }
 
     /* --- Corredor (Ocupa todo o espaço do meio) --- */
     #aisle-container {
@@ -149,14 +152,14 @@
     .prod-label { pointer-events: none; padding:1px; text-shadow: 0 1px 1px rgba(0,0,0,0.5);}
 
     /* Classes de Tamanho */
-    .sz-padrao   { width: 45px; height: 45px; } /* Ex: Caixa de Leite */
-    .sz-fino     { width: 25px; height: 50px; } /* Ex: Pasta de dente, barra de chocolate */
-    .sz-largo    { width: 70px; height: 40px; } /* Ex: Pacote de Wafer, Arroz 1kg (deitado) */
-    .sz-garrafa  { width: 30px; height: 65px; border-radius: 10px 10px 3px 3px; } /* Ex: Refrigerante, Limpador */
-    .sz-grande   { width: 60px; height: 60px; } /* Ex: Cereal, Sabão em pó */
-    .sz-baixo    { width: 50px; height: 25px; } /* Ex: Lata de atum, Sabonete */
-    .sz-longa    { width: 50px; height: 60px; } /* Ex: Macarrão */
-    .sz-blister  { width: 80px; height: 20px; } /* Ex: Pilhas, Goma de Mascar */
+    .sz-padrao   { width: 45px; height: 45px; } 
+    .sz-fino     { width: 25px; height: 50px; } 
+    .sz-largo    { width: 70px; height: 40px; } 
+    .sz-garrafa  { width: 30px; height: 65px; border-radius: 10px 10px 3px 3px; } 
+    .sz-grande   { width: 60px; height: 60px; } 
+    .sz-baixo    { width: 50px; height: 25px; } 
+    .sz-longa    { width: 50px; height: 60px; } 
+    .sz-blister  { width: 80px; height: 20px; } 
 
     /* --- Paleta Fixa (Rodapé) --- */
     #palette-container {
@@ -204,9 +207,18 @@
     .modal-btns button { flex:1; padding: 10px; border: none; border-radius: 5px; cursor: pointer; color:#fff; font-weight: bold;}
     
     .ghost { opacity: 0.4; background: #bdc3c7 !important; }
+
+    /* Estilo para avisos (durante a captura de tela) */
+    .capture-message {
+        position: fixed; top: 0; left: 0; width: 100%; padding: 10px;
+        background: #007bff; color: white; text-align: center; font-weight: bold;
+        z-index: 9999; display: none;
+    }
 </style>
 </head>
 <body>
+
+<div id="capture-message" class="capture-message">Preparando o Planograma... Aguarde.</div>
 
 <header>
     <h1>
@@ -214,6 +226,7 @@
         <span class="credits">por: Lucas Coelho, 2025</span>
     </h1>
     <div class="header-btns">
+        <button onclick="capturePlanogram()" style="background:#007bff">📸 Salvar Imagem (Print)</button>
         <button onclick="addGondola()">+ Módulo</button>
         <button onclick="resetPlanogram()" style="background:#c0392b">Reset</button>
     </div>
@@ -268,34 +281,31 @@
 <script>
     const aisle = document.getElementById('aisle-container');
     const paletteScroll = document.getElementById('palette-scroll');
+    const captureMessage = document.getElementById('capture-message');
     let currentItem = null;
 
-    // Definição da paleta inicial (20 itens)
+    // Definição da paleta inicial (20 itens genéricos)
     const initialPaletteItems = [
-        // Bebidas
-        { name: "Refr. Cola 2L", color: "#c0392b", size: "sz-garrafa" },
-        { name: "Suco Caixa 1L", color: "#e74c3c", size: "sz-padrao" },
-        { name: "Água C/ Gás", color: "#3498db", size: "sz-garrafa" },
-        { name: "Vinho 750ml", color: "#8e44ad", size: "sz-garrafa" },
-        { name: "Cerveja Lata", color: "#f39c12", size: "sz-baixo" },
-        // Mercearia
-        { name: "Leite Integral", color: "#2980b9", size: "sz-padrao" },
-        { name: "Cereal Grande", color: "#f1c40f", size: "sz-grande" },
-        { name: "Café Pote", color: "#7f8c8d", size: "sz-padrao" },
-        { name: "Macarrão 500g", color: "#d35400", size: "sz-longa" },
-        { name: "Óleo de Soja", color: "#2ecc71", size: "sz-garrafa" },
-        { name: "Arroz 1kg", color: "#95a5a6", size: "sz-largo" },
-        { name: "Sal Fino", color: "#bdc3c7", size: "sz-fino" },
-        // Biscoitos e Snacks
-        { name: "Bisc. Recheado", color: "#e67e22", size: "sz-largo" },
-        { name: "Wafer Chocolate", color: "#e91e63", size: "sz-largo" },
-        { name: "Salgadinho P", color: "#9b59b6", size: "sz-padrao" },
-        { name: "Barra de Cereal", color: "#27ae60", size: "sz-fino" },
-        // Higiene e Limpeza
-        { name: "Pasta Dental", color: "#1abc9c", size: "sz-fino" },
-        { name: "Sabonete Luxo", color: "#16a085", size: "sz-baixo" },
-        { name: "Sabão em Pó G", color: "#34495e", size: "sz-grande" },
-        { name: "Shampoo", color: "#5dade2", size: "sz-garrafa" }
+        { name: "Item 1", color: "#c0392b", size: "sz-garrafa" },
+        { name: "Item 2", color: "#e74c3c", size: "sz-padrao" },
+        { name: "Item 3", color: "#3498db", size: "sz-garrafa" },
+        { name: "Item 4", color: "#8e44ad", size: "sz-garrafa" },
+        { name: "Item 5", color: "#f39c12", size: "sz-baixo" },
+        { name: "Item 6", color: "#2980b9", size: "sz-padrao" },
+        { name: "Item 7", color: "#f1c40f", size: "sz-grande" },
+        { name: "Item 8", color: "#7f8c8d", size: "sz-padrao" },
+        { name: "Item 9", color: "#d35400", size: "sz-longa" },
+        { name: "Item 10", color: "#2ecc71", size: "sz-garrafa" },
+        { name: "Item 11", color: "#95a5a6", size: "sz-largo" },
+        { name: "Item 12", color: "#bdc3c7", size: "sz-fino" },
+        { name: "Item 13", color: "#e67e22", size: "sz-largo" },
+        { name: "Item 14", color: "#e91e63", size: "sz-largo" },
+        { name: "Item 15", color: "#9b59b6", size: "sz-padrao" },
+        { name: "Item 16", color: "#27ae60", size: "sz-fino" },
+        { name: "Item 17", color: "#1abc9c", size: "sz-fino" },
+        { name: "Item 18", color: "#16a085", size: "sz-baixo" },
+        { name: "Item 19", color: "#34495e", size: "sz-grande" },
+        { name: "Item 20", color: "#5dade2", size: "sz-garrafa" }
     ];
 
     new Sortable(paletteScroll, {
@@ -309,30 +319,96 @@
         const savedPalette = localStorage.getItem('proPalette');
         paletteScroll.innerHTML = ''; 
 
-        // CRIA A PALETA DE ITENS (Sempre carrega os itens padrão + qualquer item que o usuário tenha criado)
-        const currentPalette = savedPalette ? JSON.parse(savedPalette) : initialPaletteItems;
-
-        // Se a paleta for vazia, usa a inicial para garantir
-        if (currentPalette.length === 0) {
-            initialPaletteItems.forEach(p => addPaletteDom(p.name, p.color, p.size));
-            localStorage.setItem('proPalette', JSON.stringify(initialPaletteItems));
-        } else {
-            currentPalette.forEach(p => addPaletteDom(p.name, p.color, p.size));
+        let currentPalette = [];
+        if (savedPalette) {
+            currentPalette = JSON.parse(savedPalette);
         }
+        
+        if (currentPalette.length === 0) {
+            currentPalette = initialPaletteItems;
+            localStorage.setItem('proPalette', JSON.stringify(currentPalette));
+        }
+
+        currentPalette.forEach(p => addPaletteDom(p.name, p.color, p.size));
 
         const savedGondolas = localStorage.getItem('proAisleData');
         aisle.innerHTML = '';
         if(savedGondolas) {
             JSON.parse(savedGondolas).forEach(gData => createGondolaDom(gData.shelves));
         } else {
-            // GÔNDOLAS INICIAIS VAZIAS (3 Gôndolas com 5 prateleiras vazias cada)
             createGondolaDom([[],[],[],[],[]]);
             createGondolaDom([[],[],[],[],[]]);
             createGondolaDom([[],[],[],[],[]]);
         }
     }
 
-    /* --- GÔNDOLAS --- */
+    // --- FUNÇÃO PRINCIPAL DE CAPTURA DE IMAGEM (CORRIGIDA) ---
+    async function capturePlanogram() {
+        const originalAisle = document.getElementById('aisle-container');
+        const originalHeader = document.querySelector('header');
+        const originalPalette = document.getElementById('palette-container');
+        
+        captureMessage.style.display = 'block';
+
+        // 1. Guarda os estilos originais para restaurar depois
+        const originalBodyOverflow = document.body.style.overflow;
+        const originalAisleOverflowX = originalAisle.style.overflowX;
+        const originalAisleWidth = originalAisle.style.width;
+
+        // 2. Prepara o layout para a captura (força a largura máxima)
+        originalHeader.style.display = 'none'; // Esconde o cabeçalho
+        originalPalette.style.display = 'none'; // Esconde a paleta
+        document.body.style.overflow = 'hidden'; // Evita scroll do corpo
+        
+        // Faz o contêiner de módulos se expandir para a largura total do conteúdo
+        originalAisle.style.overflowX = 'visible'; 
+        originalAisle.style.width = originalAisle.scrollWidth + 'px'; 
+        
+        // 3. Aguarda um momento para a renderização acontecer
+        await new Promise(r => setTimeout(r, 50)); 
+
+        // 4. Captura
+        const totalWidth = originalAisle.scrollWidth;
+        const totalHeight = originalAisle.clientHeight;
+
+        html2canvas(originalAisle, { 
+            scale: 2, // Aumenta a resolução
+            width: totalWidth,
+            height: totalHeight
+        }).then(canvas => {
+            // 5. Cria o download
+            const imageURL = canvas.toDataURL('image/png');
+            const a = document.createElement('a');
+            a.href = imageURL;
+            a.download = `planograma_${new Date().toISOString().slice(0, 10)}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+
+            // 6. Restaura os estilos originais
+            originalHeader.style.display = '';
+            originalPalette.style.display = '';
+            document.body.style.overflow = originalBodyOverflow;
+            originalAisle.style.overflowX = originalAisleOverflowX;
+            originalAisle.style.width = originalAisleWidth; 
+            
+            captureMessage.style.display = 'none';
+            alert("A imagem do planograma foi gerada e está pronta para download ou visualização na sua galeria/pasta de downloads!");
+        }).catch(error => {
+            // 6. Restaura os estilos originais em caso de erro
+            originalHeader.style.display = '';
+            originalPalette.style.display = '';
+            document.body.style.overflow = originalBodyOverflow;
+            originalAisle.style.overflowX = originalAisleOverflowX;
+            originalAisle.style.width = originalAisleWidth; 
+            
+            captureMessage.style.display = 'none';
+            alert("Erro ao salvar a imagem: " + error.message);
+        });
+    }
+
+    // --- OUTRAS FUNÇÕES (MANTIDAS) ---
+
     function addGondola() {
         createGondolaDom([[],[],[],[],[]]);
         saveState();
@@ -340,12 +416,16 @@
     }
 
     function createGondolaDom(shelvesData) {
-        const id = document.querySelectorAll('.gondola').length + 1;
+        // Correção para o nome dos módulos (re-indexa após uma exclusão)
+        const currentGondolas = document.querySelectorAll('.gondola');
+        const nextId = currentGondolas.length + 1;
+        
         const div = document.createElement('div');
         div.className = 'gondola';
         
+        // Usa o ID temporário (nextId) no cabeçalho. O nome será ajustado na próxima função.
         div.innerHTML = `
-            <div class="gondola-header">Módulo ${id} <button class="btn-del-gondola" onclick="removeGondola(this)">×</button></div>
+            <div class="gondola-header">Módulo ${nextId} <button class="btn-del-gondola" onclick="removeGondola(this)">×</button></div>
             <div class="shelf-area"></div>
             <div class="btn-add-shelf-wrapper"><button class="btn-add-shelf" onclick="addShelfToGondola(this)">+ Prateleira</button></div>
         `;
@@ -356,11 +436,21 @@
         });
         
         aisle.appendChild(div);
+        updateGondolaHeaders(); // Chama para re-indexar imediatamente (se precisar)
     }
+    
+    // Novo: Garante que os Módulos sejam renumerados corretamente
+    function updateGondolaHeaders() {
+        document.querySelectorAll('.gondola').forEach((gondola, index) => {
+            gondola.querySelector('.gondola-header').firstChild.textContent = `Módulo ${index + 1} `;
+        });
+    }
+
 
     function removeGondola(btn) {
         if(confirm("Remover este módulo inteiro?")) {
             btn.closest('.gondola').remove();
+            updateGondolaHeaders(); // Renumera após a remoção
             saveState();
         }
     }
@@ -407,7 +497,6 @@
         }
     }
 
-    /* --- Lógica Sortable & Preenchimento --- */
     function setupShelfSortable(shelfElement) {
         new Sortable(shelfElement, {
             group: 'shared', animation: 150, ghostClass: 'ghost',
@@ -436,7 +525,6 @@
         }
     }
 
-    /* --- Produtos --- */
     function createProductDom(name, color, size) {
         const el = document.createElement('div');
         setupProductElement(el, name, color, size);
@@ -453,7 +541,6 @@
         el.onclick = null; paletteScroll.appendChild(el);
     }
 
-    /* --- Modais --- */
     function openEdit(el) {
         currentItem = el; document.getElementById('editName').value = el.dataset.name;
         document.getElementById('modalEdit').style.display = 'flex';
@@ -470,18 +557,16 @@
         document.getElementById('newTypeName').value = ''; document.getElementById('modalNew').style.display = 'flex';
     }
     function createNewType() {
-        const name = document.getElementById('newTypeName').value || 'Item';
+        const name = document.getElementById('newTypeName').value || 'Item Personalizado';
         const color = document.getElementById('newTypeColor').value;
         const size = document.getElementById('newTypeSize').value;
         addPaletteDom(name, color, size);
-        // Salva o novo item na paleta do localStorage
         const current = JSON.parse(localStorage.getItem('proPalette') || '[]');
         current.push({name, color, size}); localStorage.setItem('proPalette', JSON.stringify(current));
         closeModals();
     }
     function closeModals() { document.querySelectorAll('.modal-overlay').forEach(m => m.style.display='none'); currentItem = null; }
 
-    /* --- Persistência --- */
     function saveState() {
         const data = [];
         document.querySelectorAll('.gondola').forEach(g => {
@@ -496,8 +581,9 @@
         });
         localStorage.setItem('proAisleData', JSON.stringify(data));
     }
+    
     function resetPlanogram() {
-        if(confirm("Deseja limpar todos os módulos do corredor E redefinir a paleta de itens para o padrão de 20 itens?")) {
+        if(confirm("Deseja limpar todos os módulos do corredor E redefinir a paleta de itens para o padrão (Item 1, Item 2, etc.)?")) {
             localStorage.removeItem('proAisleData'); 
             localStorage.removeItem('proPalette');
             location.reload();
