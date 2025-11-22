@@ -270,6 +270,34 @@
     const paletteScroll = document.getElementById('palette-scroll');
     let currentItem = null;
 
+    // Definição da paleta inicial (20 itens)
+    const initialPaletteItems = [
+        // Bebidas
+        { name: "Refr. Cola 2L", color: "#c0392b", size: "sz-garrafa" },
+        { name: "Suco Caixa 1L", color: "#e74c3c", size: "sz-padrao" },
+        { name: "Água C/ Gás", color: "#3498db", size: "sz-garrafa" },
+        { name: "Vinho 750ml", color: "#8e44ad", size: "sz-garrafa" },
+        { name: "Cerveja Lata", color: "#f39c12", size: "sz-baixo" },
+        // Mercearia
+        { name: "Leite Integral", color: "#2980b9", size: "sz-padrao" },
+        { name: "Cereal Grande", color: "#f1c40f", size: "sz-grande" },
+        { name: "Café Pote", color: "#7f8c8d", size: "sz-padrao" },
+        { name: "Macarrão 500g", color: "#d35400", size: "sz-longa" },
+        { name: "Óleo de Soja", color: "#2ecc71", size: "sz-garrafa" },
+        { name: "Arroz 1kg", color: "#95a5a6", size: "sz-largo" },
+        { name: "Sal Fino", color: "#bdc3c7", size: "sz-fino" },
+        // Biscoitos e Snacks
+        { name: "Bisc. Recheado", color: "#e67e22", size: "sz-largo" },
+        { name: "Wafer Chocolate", color: "#e91e63", size: "sz-largo" },
+        { name: "Salgadinho P", color: "#9b59b6", size: "sz-padrao" },
+        { name: "Barra de Cereal", color: "#27ae60", size: "sz-fino" },
+        // Higiene e Limpeza
+        { name: "Pasta Dental", color: "#1abc9c", size: "sz-fino" },
+        { name: "Sabonete Luxo", color: "#16a085", size: "sz-baixo" },
+        { name: "Sabão em Pó G", color: "#34495e", size: "sz-grande" },
+        { name: "Shampoo", color: "#5dade2", size: "sz-garrafa" }
+    ];
+
     new Sortable(paletteScroll, {
         group: { name: 'shared', pull: 'clone', put: false },
         sort: false, animation: 150
@@ -280,39 +308,16 @@
     function loadData() {
         const savedPalette = localStorage.getItem('proPalette');
         paletteScroll.innerHTML = ''; 
-        if(savedPalette) {
-            JSON.parse(savedPalette).forEach(p => addPaletteDom(p.name, p.color, p.size));
-        } else {
-            // PALETA COM 20 ITENS PRONTOS
-            const initialPalette = [
-                // Bebidas
-                { name: "Refr. Cola 2L", color: "#c0392b", size: "sz-garrafa" },
-                { name: "Suco Caixa 1L", color: "#e74c3c", size: "sz-padrao" },
-                { name: "Água C/ Gás", color: "#3498db", size: "sz-garrafa" },
-                { name: "Vinho 750ml", color: "#8e44ad", size: "sz-garrafa" },
-                // Matinais e Mercearia
-                { name: "Leite Integral", color: "#2980b9", size: "sz-padrao" },
-                { name: "Cereal Grande", color: "#f1c40f", size: "sz-grande" },
-                { name: "Café Pote", color: "#7f8c8d", size: "sz-padrao" },
-                { name: "Macarrão 500g", color: "#d35400", size: "sz-longa" },
-                { name: "Óleo de Soja", color: "#2ecc71", size: "sz-garrafa" },
-                { name: "Açúcar 1kg", color: "#95a5a6", size: "sz-padrao" },
-                // Biscoitos e Snacks
-                { name: "Biscoito Recheado", color: "#e67e22", size: "sz-largo" },
-                { name: "Wafer Morango", color: "#e91e63", size: "sz-largo" },
-                { name: "Salgadinho P", color: "#f39c12", size: "sz-padrao" },
-                { name: "Barra de Cereal", color: "#27ae60", size: "sz-fino" },
-                // Higiene e Limpeza
-                { name: "Pasta Dental", color: "#1abc9c", size: "sz-fino" },
-                { name: "Sabonete", color: "#bdc3c7", size: "sz-baixo" },
-                { name: "Desodorante Spray", color: "#9b59b6", size: "sz-garrafa" },
-                { name: "Sabão em Pó G", color: "#34495e", size: "sz-grande" },
-                { name: "Limpa Vidro", color: "#5dade2", size: "sz-garrafa" },
-                // Outros
-                { name: "Lata Atum", color: "#16a085", size: "sz-baixo" }
-            ];
 
-            initialPalette.forEach(p => addPaletteDom(p.name, p.color, p.size));
+        // CRIA A PALETA DE ITENS (Sempre carrega os itens padrão + qualquer item que o usuário tenha criado)
+        const currentPalette = savedPalette ? JSON.parse(savedPalette) : initialPaletteItems;
+
+        // Se a paleta for vazia, usa a inicial para garantir
+        if (currentPalette.length === 0) {
+            initialPaletteItems.forEach(p => addPaletteDom(p.name, p.color, p.size));
+            localStorage.setItem('proPalette', JSON.stringify(initialPaletteItems));
+        } else {
+            currentPalette.forEach(p => addPaletteDom(p.name, p.color, p.size));
         }
 
         const savedGondolas = localStorage.getItem('proAisleData');
@@ -320,7 +325,7 @@
         if(savedGondolas) {
             JSON.parse(savedGondolas).forEach(gData => createGondolaDom(gData.shelves));
         } else {
-            // GÔNDOLAS INICIAIS VAZIAS
+            // GÔNDOLAS INICIAIS VAZIAS (3 Gôndolas com 5 prateleiras vazias cada)
             createGondolaDom([[],[],[],[],[]]);
             createGondolaDom([[],[],[],[],[]]);
             createGondolaDom([[],[],[],[],[]]);
@@ -469,6 +474,7 @@
         const color = document.getElementById('newTypeColor').value;
         const size = document.getElementById('newTypeSize').value;
         addPaletteDom(name, color, size);
+        // Salva o novo item na paleta do localStorage
         const current = JSON.parse(localStorage.getItem('proPalette') || '[]');
         current.push({name, color, size}); localStorage.setItem('proPalette', JSON.stringify(current));
         closeModals();
@@ -491,8 +497,10 @@
         localStorage.setItem('proAisleData', JSON.stringify(data));
     }
     function resetPlanogram() {
-        if(confirm("Resetar tudo para 3 gôndolas vazias?")) {
-            localStorage.removeItem('proAisleData'); location.reload();
+        if(confirm("Deseja limpar todos os módulos do corredor E redefinir a paleta de itens para o padrão de 20 itens?")) {
+            localStorage.removeItem('proAisleData'); 
+            localStorage.removeItem('proPalette');
+            location.reload();
         }
     }
 </script>
