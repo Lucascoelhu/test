@@ -3,17 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Planograma Corredor</title>
+<title>Planograma Pro</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 <style>
     :root {
         --primary: #2c3e50;
-        --accent: #2980b9;
+        --accent: #e67e22;
         --bg: #ecf0f1;
         --gondola-bg: #fff;
-        --shelf-border: #7f8c8d;
+        --shelf-border: #95a5a6;
         --header-h: 50px;
-        --footer-h: 130px;
+        --footer-h: 140px;
     }
 
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -23,11 +23,11 @@
         background: var(--bg); 
         margin: 0; padding: 0; 
         height: 100vh;
-        overflow: hidden; /* Evita rolagem da página inteira, apenas do corredor */
+        overflow: hidden; 
         display: flex; flex-direction: column;
     }
 
-    /* --- Cabeçalho --- */
+    /* --- Header --- */
     header {
         height: var(--header-h);
         background: var(--primary); color: white; padding: 0 15px;
@@ -41,83 +41,97 @@
         padding: 6px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; margin-left:5px;
     }
 
-    /* --- O CORREDOR (Container Horizontal) --- */
+    /* --- Corredor (Horizontal) --- */
     #aisle-container {
-        flex: 1; /* Ocupa o espaço restante entre header e footer */
-        display: flex; /* Lado a lado */
+        flex: 1; 
+        display: flex; 
         flex-direction: row;
-        overflow-x: auto; /* Rolagem horizontal */
+        overflow-x: auto; 
         overflow-y: hidden;
         padding: 10px;
-        gap: 5px; /* Espaço pequeno entre gôndolas */
+        gap: 8px;
         align-items: flex-start;
         background-image: linear-gradient(#ddd 1px, transparent 1px);
-        background-size: 20px 20px; /* Efeito de grade de fundo */
+        background-size: 20px 20px;
     }
 
-    /* --- Módulo da Gôndola --- */
+    /* --- Módulo Gôndola --- */
     .gondola {
         background: var(--gondola-bg);
-        width: 300px; /* Largura fixa para cada módulo */
-        min-width: 300px;
-        height: 100%; /* Ocupa altura disponível */
-        border: 1px solid #999;
-        border-top: 4px solid #555; /* Topo da estante */
+        width: 310px; 
+        min-width: 310px;
+        height: 100%; 
+        border: 1px solid #bdc3c7;
+        border-top: 6px solid #7f8c8d; 
         display: flex; flex-direction: column;
-        box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-        position: relative;
+        box-shadow: 3px 0 8px rgba(0,0,0,0.1);
+        border-radius: 4px 4px 0 0;
     }
     
     .gondola-header {
         text-align: center; font-size: 12px; color: #fff; 
-        background: #7f8c8d; padding: 4px;
+        background: #7f8c8d; padding: 6px;
         display: flex; justify-content: space-between; align-items: center;
-        padding: 4px 10px;
+        font-weight: bold;
     }
-    .btn-del-gondola { background:none; border:none; color:#ffaaaa; font-weight:bold; font-size:14px;}
+    .btn-del-gondola { background:none; border:none; color:#ffcfcf; font-weight:bold; font-size:16px; padding:0 5px;}
 
     /* --- Prateleiras --- */
     .shelf-area {
         flex: 1;
         display: flex; flex-direction: column;
-        justify-content: space-evenly; /* Distribui prateleiras uniformemente */
-        padding-bottom: 10px;
+        justify-content: space-evenly; 
+        padding-bottom: 5px;
     }
 
     .shelf {
         background: #fff;
-        border-bottom: 8px solid #bdc3c7; /* Frente da prateleira */
+        border-bottom: 8px solid var(--shelf-border); 
         border-top: 1px solid #eee;
-        height: 75px; /* Altura fixa da prateleira */
+        height: 85px; 
         display: flex;
-        align-items: flex-end; /* Produtos no chão da prateleira */
-        padding: 0 4px;
-        margin: 0 5px;
+        align-items: flex-end; /* Itens no chão da prateleira */
+        padding: 0 2px;
+        margin: 0 6px;
         position: relative;
+        
+        /* CORREÇÃO VISUAL: Impede vazar para fora */
+        flex-wrap: wrap; 
+        overflow: hidden; 
+        align-content: flex-end;
     }
+    
     /* Sombra interna para profundidade */
     .shelf::before {
-        content: ''; position: absolute; top:0; left:0; right:0; height: 10px;
-        background: linear-gradient(to bottom, rgba(0,0,0,0.1), transparent);
+        content: ''; position: absolute; top:0; left:0; right:0; height: 15px;
+        background: linear-gradient(to bottom, rgba(0,0,0,0.05), transparent);
         pointer-events: none;
     }
 
     /* --- Produtos --- */
     .product {
-        width: 45px; height: 45px;
-        margin: 0 2px;
-        border-radius: 2px;
+        margin: 0 1px 1px 1px; /* Margem pequena para caber mais */
+        border-radius: 3px;
         display: flex; align-items: center; justify-content: center;
         flex-shrink: 0;
         position: relative;
-        box-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+        box-shadow: 1px 1px 2px rgba(0,0,0,0.2);
         cursor: pointer;
-        font-size: 9px; line-height: 1.1;
+        font-size: 9px; line-height: 1;
         text-align: center; color: #fff; 
         overflow: hidden;
-        border: 1px solid rgba(0,0,0,0.1);
+        border: 1px solid rgba(255,255,255,0.3);
+        user-select: none;
     }
-    .prod-label { pointer-events: none; padding:1px; }
+    .prod-label { pointer-events: none; padding:1px; text-shadow: 0 1px 1px rgba(0,0,0,0.5);}
+
+    /* --- Classes de Tamanho --- */
+    .sz-padrao   { width: 45px; height: 45px; }
+    .sz-fino     { width: 25px; height: 50px; }
+    .sz-largo    { width: 70px; height: 40px; }
+    .sz-garrafa  { width: 30px; height: 65px; border-radius: 10px 10px 3px 3px; }
+    .sz-grande   { width: 60px; height: 60px; }
+    .sz-baixo    { width: 50px; height: 25px; }
 
     /* --- Paleta Fixa --- */
     #palette-container {
@@ -126,48 +140,54 @@
         border-top: 2px solid #ccc;
         display: flex; flex-direction: column;
         z-index: 100;
-        box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        box-shadow: 0 -4px 10px rgba(0,0,0,0.1);
     }
     .palette-header {
-        padding: 5px 10px; background: #f4f4f4; font-size: 12px; color: #555;
+        padding: 8px 15px; background: #f4f4f4; font-size: 12px; color: #555;
         display: flex; justify-content: space-between; align-items: center;
+        border-bottom: 1px solid #e0e0e0;
     }
     .btn-add-type {
-        background: #27ae60; color: white; border: none; border-radius: 4px;
-        padding: 4px 8px; font-size: 11px;
+        background: var(--accent); color: white; border: none; border-radius: 20px;
+        padding: 6px 14px; font-size: 12px; font-weight: bold;
     }
 
     #palette-scroll {
         flex: 1; overflow-x: auto;
-        display: flex; align-items: center; gap: 8px; padding: 0 10px;
+        display: flex; align-items: center; gap: 12px; padding: 0 15px;
     }
+    /* Na paleta, mostra tamanho real mas centralizado verticalmente */
     #palette-scroll .product { 
-        width: 55px; height: 55px; margin-bottom: 0; flex-shrink: 0;
+        flex-shrink: 0; margin-bottom: 0; transform: scale(0.9);
     }
 
     /* --- Modais --- */
     .modal-overlay {
         position: fixed; inset: 0; background: rgba(0,0,0,0.6);
         display: none; justify-content: center; align-items: center; z-index: 2000;
+        backdrop-filter: blur(2px);
     }
     .modal-box {
-        background: #fff; padding: 15px; border-radius: 6px; width: 85%; max-width: 300px;
-        text-align: center;
+        background: #fff; padding: 20px; border-radius: 8px; width: 90%; max-width: 320px;
+        text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.3);
     }
-    .modal-box input { width: 100%; padding: 8px; margin: 10px 0; border: 1px solid #ccc; }
-    .modal-btns { display: flex; gap: 10px; justify-content: center; margin-top: 10px;}
-    .modal-btns button { flex:1; padding: 8px; border: none; border-radius: 4px; cursor: pointer; color:#fff;}
+    .modal-box h3 { margin-top: 0; color: var(--primary); }
+    .modal-box input, .modal-box select { 
+        width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #bdc3c7; border-radius: 5px; font-size: 14px; 
+    }
+    .modal-btns { display: flex; gap: 10px; justify-content: center; margin-top: 15px;}
+    .modal-btns button { flex:1; padding: 10px; border: none; border-radius: 5px; cursor: pointer; color:#fff; font-weight: bold;}
     
-    .ghost { opacity: 0.4; background: #aaa !important; }
+    .ghost { opacity: 0.4; background: #bdc3c7 !important; }
 </style>
 </head>
 <body>
 
 <header>
-    <h1>Mercado: Vista Corredor</h1>
+    <h1>Planograma Mercado</h1>
     <div class="header-btns">
         <button onclick="addGondola()">+ Módulo</button>
-        <button onclick="resetPlanogram()" style="background:#c0392b">Limpar</button>
+        <button onclick="resetPlanogram()" style="background:#c0392b">Limpar Tudo</button>
     </div>
 </header>
 
@@ -176,38 +196,46 @@
 
 <div id="palette-container">
     <div class="palette-header">
-        <b>Produtos</b> (Arraste para a prateleira)
-        <button class="btn-add-type" onclick="openNewTypeModal()">+ Criar Item</button>
+        <span>Arraste para a prateleira</span>
+        <button class="btn-add-type" onclick="openNewTypeModal()">+ Novo Item</button>
     </div>
     <div id="palette-scroll">
-        <div class="product" style="background:#c0392b" data-color="#c0392b" data-name="Cola"><span class="prod-label">Cola</span></div>
-        <div class="product" style="background:#2980b9" data-color="#2980b9" data-name="Leite"><span class="prod-label">Leite</span></div>
-        <div class="product" style="background:#f39c12" data-color="#f39c12" data-name="Suco"><span class="prod-label">Suco</span></div>
-        <div class="product" style="background:#27ae60" data-color="#27ae60" data-name="Arroz"><span class="prod-label">Arroz</span></div>
-    </div>
+        </div>
 </div>
 
 <div id="modalEdit" class="modal-overlay">
     <div class="modal-box">
-        <h3>Etiqueta do Produto</h3>
+        <h3>Editar Produto</h3>
         <input type="text" id="editName" placeholder="Nome do produto">
         <div class="modal-btns">
-            <button style="background:#c0392b" onclick="deleteItem()">Excluir</button>
-            <button style="background:#2980b9" onclick="saveItem()">Salvar</button>
+            <button style="background:#e74c3c" onclick="deleteItem()">Remover 1</button>
+            <button style="background:#34495e" onclick="saveItem()">Salvar Nome</button>
         </div>
-        <button style="background:#ccc; color:#333; margin-top:5px; width:100%; border:none; padding:8px; border-radius:4px" onclick="closeModals()">Cancelar</button>
+        <button style="background:#95a5a6; width:100%; margin-top:10px; padding:8px; border:none; border-radius:4px; color:#fff" onclick="closeModals()">Cancelar</button>
     </div>
 </div>
 
 <div id="modalNew" class="modal-overlay">
     <div class="modal-box">
-        <h3>Novo Tipo de Produto</h3>
-        <input type="text" id="newTypeName" placeholder="Ex: Sabão em Pó">
-        <label style="font-size:12px; display:block; text-align:left">Cor da Embalagem:</label>
-        <input type="color" id="newTypeColor" value="#8e44ad" style="height:40px; padding:0">
+        <h3>Criar Novo Item</h3>
+        <input type="text" id="newTypeName" placeholder="Nome (ex: Wafer)">
+        
+        <label style="text-align:left; display:block; font-size:12px; color:#666; margin-top:5px">Formato:</label>
+        <select id="newTypeSize">
+            <option value="sz-padrao">Padrão (Quadrado)</option>
+            <option value="sz-fino">Fino (Ex: Pasta de dente)</option>
+            <option value="sz-largo">Largo (Ex: Wafer/Barra)</option>
+            <option value="sz-garrafa">Garrafa / Spray</option>
+            <option value="sz-baixo">Baixo (Ex: Atum/Sabonete)</option>
+            <option value="sz-grande">Grande (Ex: Sabão pó)</option>
+        </select>
+
+        <label style="text-align:left; display:block; font-size:12px; color:#666; margin-top:5px">Cor:</label>
+        <input type="color" id="newTypeColor" value="#9b59b6" style="height:40px; padding:2px">
+        
         <div class="modal-btns">
             <button style="background:#27ae60" onclick="createNewType()">Criar</button>
-            <button style="background:#ccc; color:#333" onclick="closeModals()">Cancelar</button>
+            <button style="background:#95a5a6" onclick="closeModals()">Cancelar</button>
         </div>
     </div>
 </div>
@@ -217,40 +245,45 @@
     const paletteScroll = document.getElementById('palette-scroll');
     let currentItem = null;
 
-    /* --- INICIO --- */
     // Configura Paleta
     new Sortable(paletteScroll, {
         group: { name: 'shared', pull: 'clone', put: false },
         sort: false, animation: 150
     });
 
+    // Inicia
     loadData();
 
-    /* --- GESTÃO DO LAYOUT --- */
+    /* --- SISTEMA DE ARQUIVOS --- */
     function loadData() {
-        // Carregar Itens Customizados
-        const savedPalette = localStorage.getItem('myPalette');
+        // Carregar Paleta
+        const savedPalette = localStorage.getItem('proPalette');
+        paletteScroll.innerHTML = ''; 
         if(savedPalette) {
-            JSON.parse(savedPalette).forEach(p => addPaletteDom(p.name, p.color));
+            JSON.parse(savedPalette).forEach(p => addPaletteDom(p.name, p.color, p.size));
+        } else {
+            // Paleta Inicial Padrão
+            addPaletteDom("Cola", "#c0392b", "sz-garrafa");
+            addPaletteDom("Wafer", "#8e44ad", "sz-largo");
+            addPaletteDom("Leite", "#2980b9", "sz-padrao");
+            addPaletteDom("Pasta", "#27ae60", "sz-fino");
         }
 
         // Carregar Gôndolas
-        const savedGondolas = localStorage.getItem('aisleData');
+        const savedGondolas = localStorage.getItem('proAisleData');
         aisle.innerHTML = '';
         if(savedGondolas) {
             JSON.parse(savedGondolas).forEach(gData => createGondolaDom(gData.shelves));
         } else {
-            // Inicia com 3 gôndolas lado a lado
             createGondolaDom([[],[],[],[],[]]); 
-            createGondolaDom([[],[],[],[],[]]);
             createGondolaDom([[],[],[],[],[]]);
         }
     }
 
+    /* --- GÔNDOLAS --- */
     function addGondola() {
-        createGondolaDom([[],[],[],[],[]]); // 5 prateleiras vazias
+        createGondolaDom([[],[],[],[],[]]);
         saveState();
-        // Rola o corredor para a direita para ver a nova gôndola
         setTimeout(() => aisle.scrollTo({ left: aisle.scrollWidth, behavior: 'smooth' }), 100);
     }
 
@@ -265,38 +298,69 @@
             </div>
             <div class="shelf-area"></div>
         `;
-
-        const shelfArea = div.querySelector('.shelf-area');
+        const area = div.querySelector('.shelf-area');
         
         shelvesData.forEach(items => {
             const shelf = document.createElement('div');
             shelf.className = 'shelf';
-            
-            items.forEach(item => {
-                shelf.appendChild(createProductDom(item.name, item.color));
-            });
-
-            shelfArea.appendChild(shelf);
-
-            // Sortable na prateleira
-            new Sortable(shelf, {
-                group: 'shared',
-                animation: 150,
-                ghostClass: 'ghost',
-                onAdd: (evt) => {
-                    const el = evt.item;
-                    // Atualiza visual e eventos ao soltar
-                    el.style.background = el.dataset.color;
-                    el.innerHTML = `<span class="prod-label">${el.dataset.name}</span>`;
-                    el.onclick = () => openEdit(el);
-                    saveState();
-                },
-                onUpdate: () => saveState(),
-                onRemove: () => saveState()
-            });
+            items.forEach(i => shelf.appendChild(createProductDom(i.name, i.color, i.size)));
+            area.appendChild(shelf);
+            setupShelfSortable(shelf);
         });
-
         aisle.appendChild(div);
+    }
+
+    function setupShelfSortable(shelfElement) {
+        new Sortable(shelfElement, {
+            group: 'shared',
+            animation: 150,
+            ghostClass: 'ghost',
+            onAdd: async (evt) => {
+                const el = evt.item;
+                const parent = el.parentNode; // A prateleira
+                
+                // Configura visual do item clonado
+                setupProductElement(el, el.dataset.name, el.dataset.color, el.dataset.size);
+                
+                saveState(); // Salva o estado inicial (1 item)
+
+                // LÓGICA DE PREENCHIMENTO
+                // Pequeno delay para o DOM atualizar visualmente
+                await new Promise(r => setTimeout(r, 50)); 
+
+                if(confirm("Preencher a prateleira toda com este item?")) {
+                    fillShelf(parent, el);
+                }
+            },
+            onUpdate: () => saveState(),
+            onRemove: () => saveState()
+        });
+    }
+
+    /* --- LÓGICA DE PREENCHIMENTO INTELIGENTE --- */
+    function fillShelf(shelf, templateItem) {
+        const shelfWidth = shelf.clientWidth; // Largura total disponível
+        const itemWidth = templateItem.offsetWidth + 2; // Largura do item + margens
+        
+        // Quantos itens já existem?
+        const currentCount = shelf.children.length;
+        
+        // Cálculo aproximado de quantos cabem no total
+        // Descontamos padding da prateleira (~4px)
+        const maxItems = Math.floor((shelfWidth - 4) / itemWidth);
+        
+        const needed = maxItems - currentCount;
+
+        if(needed > 0) {
+            for(let i=0; i<needed; i++){
+                // Clona o item modelo
+                const clone = templateItem.cloneNode(true);
+                // Reativa o evento de clique no clone
+                clone.onclick = () => openEdit(clone);
+                shelf.appendChild(clone);
+            }
+            saveState();
+        }
     }
 
     function removeGondola(btn) {
@@ -307,24 +371,33 @@
     }
 
     /* --- PRODUTOS --- */
-    function createProductDom(name, color) {
+    function createProductDom(name, color, size) {
         const el = document.createElement('div');
-        el.className = 'product';
-        el.style.background = color;
-        el.dataset.name = name;
-        el.dataset.color = color;
-        el.innerHTML = `<span class="prod-label">${name}</span>`;
-        el.onclick = () => openEdit(el);
+        setupProductElement(el, name, color, size);
         return el;
     }
 
-    function addPaletteDom(name, color) {
-        const el = createProductDom(name, color);
-        el.onclick = null; // Paleta não edita
+    function setupProductElement(el, name, color, size) {
+        el.className = `product ${size}`;
+        el.style.background = color;
+        el.dataset.name = name;
+        el.dataset.color = color;
+        el.dataset.size = size;
+        el.innerHTML = `<span class="prod-label">${name}</span>`;
+        
+        // Se estiver na prateleira, permite clicar. Se estiver na paleta, não.
+        if(!el.closest('#palette-scroll')) {
+            el.onclick = () => openEdit(el);
+        }
+    }
+
+    function addPaletteDom(name, color, size) {
+        const el = createProductDom(name, color, size);
+        el.onclick = null; 
         paletteScroll.appendChild(el);
     }
 
-    /* --- MODAIS --- */
+    /* --- INTERFACE MODAIS --- */
     function openEdit(el) {
         currentItem = el;
         document.getElementById('editName').value = el.dataset.name;
@@ -355,12 +428,14 @@
     function createNewType() {
         const name = document.getElementById('newTypeName').value || 'Item';
         const color = document.getElementById('newTypeColor').value;
-        addPaletteDom(name, color);
+        const size = document.getElementById('newTypeSize').value;
+        
+        addPaletteDom(name, color, size);
 
-        // Salva paleta
-        const list = JSON.parse(localStorage.getItem('myPalette') || '[]');
-        list.push({name, color});
-        localStorage.setItem('myPalette', JSON.stringify(list));
+        // Salva paleta personalizada
+        const current = JSON.parse(localStorage.getItem('proPalette') || '[]');
+        current.push({name, color, size});
+        localStorage.setItem('proPalette', JSON.stringify(current));
         
         closeModals();
     }
@@ -370,7 +445,7 @@
         currentItem = null;
     }
 
-    /* --- SAVE --- */
+    /* --- PERSISTÊNCIA --- */
     function saveState() {
         const data = [];
         document.querySelectorAll('.gondola').forEach(g => {
@@ -378,18 +453,22 @@
             g.querySelectorAll('.shelf').forEach(s => {
                 const pData = [];
                 s.querySelectorAll('.product').forEach(p => {
-                    pData.push({ name: p.dataset.name, color: p.dataset.color });
+                    pData.push({ 
+                        name: p.dataset.name, 
+                        color: p.dataset.color,
+                        size: p.dataset.size
+                    });
                 });
                 sData.push(pData);
             });
             data.push({ shelves: sData });
         });
-        localStorage.setItem('aisleData', JSON.stringify(data));
+        localStorage.setItem('proAisleData', JSON.stringify(data));
     }
 
     function resetPlanogram() {
-        if(confirm("Limpar todo o corredor?")) {
-            localStorage.removeItem('aisleData');
+        if(confirm("Deseja limpar todo o corredor?")) {
+            localStorage.removeItem('proAisleData');
             location.reload();
         }
     }
