@@ -1,326 +1,398 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Simulador de Planograma - Avançado</title>
-    <style>
-        /* --- ESTILOS GERAIS --- */
-        :root{--accent:#ff6600}
-        body { font-family: Arial, sans-serif; margin: 20px; background-color: #fafafa; }
-        h1 { text-align: center; color: #333; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Planograma Corredor</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+<style>
+    :root {
+        --primary: #2c3e50;
+        --accent: #2980b9;
+        --bg: #ecf0f1;
+        --gondola-bg: #fff;
+        --shelf-border: #7f8c8d;
+        --header-h: 50px;
+        --footer-h: 130px;
+    }
 
-        #controls { margin-bottom: 12px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: center; padding: 10px; border: 1px solid #ddd; border-radius: 8px; background-color: #fff; }
-        #shelvesContainer { display: grid; gap: 12px; padding: 10px; border: 2px solid #555; background-color: #ccc; }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    
+    body { 
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: var(--bg); 
+        margin: 0; padding: 0; 
+        height: 100vh;
+        overflow: hidden; /* Evita rolagem da página inteira, apenas do corredor */
+        display: flex; flex-direction: column;
+    }
 
-        /* --- PRATELEIRAS COM GRID INTERNO --- */
-        .shelf { position: relative; border-bottom: 5px solid #a07d58; background: #fff; height: 120px; padding: 5px; border-radius: 2px; box-shadow: inset 0 0 5px rgba(0,0,0,0.05); display: grid; grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); grid-template-rows: repeat(auto-fill, minmax(30px, 1fr)); gap: 2px; overflow: auto; }
-        .shelf.active { box-shadow: 0 0 0 2px #4CAF50 inset; }
+    /* --- Cabeçalho --- */
+    header {
+        height: var(--header-h);
+        background: var(--primary); color: white; padding: 0 15px;
+        display: flex; justify-content: space-between; align-items: center;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        flex-shrink: 0;
+    }
+    h1 { margin: 0; font-size: 1rem; font-weight: 600; }
+    .header-btns button {
+        background: rgba(255,255,255,0.2); border: none; color: white;
+        padding: 6px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; margin-left:5px;
+    }
 
-        /* contador por seção */
-        .shelf-counter { position: absolute; right: 6px; top: 6px; background: rgba(0,0,0,0.65); color: #fff; padding: 3px 8px; border-radius: 12px; font-size: 12px; z-index: 50; }
+    /* --- O CORREDOR (Container Horizontal) --- */
+    #aisle-container {
+        flex: 1; /* Ocupa o espaço restante entre header e footer */
+        display: flex; /* Lado a lado */
+        flex-direction: row;
+        overflow-x: auto; /* Rolagem horizontal */
+        overflow-y: hidden;
+        padding: 10px;
+        gap: 5px; /* Espaço pequeno entre gôndolas */
+        align-items: flex-start;
+        background-image: linear-gradient(#ddd 1px, transparent 1px);
+        background-size: 20px 20px; /* Efeito de grade de fundo */
+    }
 
-        /* --- CÉLULA --- */
-        .shelf-cell { position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: flex-end; }
-        .shelf-cell:hover { background-color: rgba(0,0,0,0.03); cursor: pointer; }
+    /* --- Módulo da Gôndola --- */
+    .gondola {
+        background: var(--gondola-bg);
+        width: 300px; /* Largura fixa para cada módulo */
+        min-width: 300px;
+        height: 100%; /* Ocupa altura disponível */
+        border: 1px solid #999;
+        border-top: 4px solid #555; /* Topo da estante */
+        display: flex; flex-direction: column;
+        box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        position: relative;
+    }
+    
+    .gondola-header {
+        text-align: center; font-size: 12px; color: #fff; 
+        background: #7f8c8d; padding: 4px;
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 4px 10px;
+    }
+    .btn-del-gondola { background:none; border:none; color:#ffaaaa; font-weight:bold; font-size:14px;}
 
-        .shelf-label { position: absolute; top: 5px; left: 5px; width: auto; max-width: 60%; text-align: left; background: rgba(255,255,255,0.9); border: 1px solid rgba(0,0,0,0.12); border-radius: 4px; font-size: 12px; color: #333; padding: 2px 6px; z-index: 40; }
-        .shelf-label:focus { outline: none; background: rgba(255,255,255,0.98); }
+    /* --- Prateleiras --- */
+    .shelf-area {
+        flex: 1;
+        display: flex; flex-direction: column;
+        justify-content: space-evenly; /* Distribui prateleiras uniformemente */
+        padding-bottom: 10px;
+    }
 
-        /* --- PRODUTOS --- */
-        .item { border-radius: 3px; cursor: grab; transition: transform 0.12s, box-shadow 0.2s; position: absolute; bottom: 0; z-index: 20; display: flex; align-items: center; justify-content: center; }
-        .item:active { cursor: grabbing; }
-        .item:hover { transform: scale(1.05); box-shadow: 0 0 8px rgba(0,0,0,0.4); }
+    .shelf {
+        background: #fff;
+        border-bottom: 8px solid #bdc3c7; /* Frente da prateleira */
+        border-top: 1px solid #eee;
+        height: 75px; /* Altura fixa da prateleira */
+        display: flex;
+        align-items: flex-end; /* Produtos no chão da prateleira */
+        padding: 0 4px;
+        margin: 0 5px;
+        position: relative;
+    }
+    /* Sombra interna para profundidade */
+    .shelf::before {
+        content: ''; position: absolute; top:0; left:0; right:0; height: 10px;
+        background: linear-gradient(to bottom, rgba(0,0,0,0.1), transparent);
+        pointer-events: none;
+    }
 
-        /* pequeno painel de nome sobre o item */
-        .item .name { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); color: #fff; padding: 2px 6px; font-size: 11px; border-radius: 4px; white-space: nowrap; z-index: 30; display: none; }
-        .item.has-name .name { display: block; }
+    /* --- Produtos --- */
+    .product {
+        width: 45px; height: 45px;
+        margin: 0 2px;
+        border-radius: 2px;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+        position: relative;
+        box-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+        cursor: pointer;
+        font-size: 9px; line-height: 1.1;
+        text-align: center; color: #fff; 
+        overflow: hidden;
+        border: 1px solid rgba(0,0,0,0.1);
+    }
+    .prod-label { pointer-events: none; padding:1px; }
 
-        /* botão de remover pequeno */
-        .item .remove-btn { position: absolute; top: -8px; right: -8px; width: 18px; height: 18px; border-radius: 50%; font-size: 12px; display:flex; align-items:center; justify-content:center; background: rgba(255,255,255,0.95); border: 1px solid rgba(0,0,0,0.12); cursor: pointer; z-index: 40; }
+    /* --- Paleta Fixa --- */
+    #palette-container {
+        height: var(--footer-h);
+        background: #fff;
+        border-top: 2px solid #ccc;
+        display: flex; flex-direction: column;
+        z-index: 100;
+        box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+    }
+    .palette-header {
+        padding: 5px 10px; background: #f4f4f4; font-size: 12px; color: #555;
+        display: flex; justify-content: space-between; align-items: center;
+    }
+    .btn-add-type {
+        background: #27ae60; color: white; border: none; border-radius: 4px;
+        padding: 4px 8px; font-size: 11px;
+    }
 
-        /* --- TIPOS DE PRODUTOS (DIMENSÕES) --- */
-        .small { width: 25px; height: 35px; background-color: #ffb347; }
-        .medium { width: 35px; height: 45px; background-color: #77dd77; }
-        .large { width: 45px; height: 55px; background-color: #84b6f4; }
-        .tall { width: 30px; height: 60px; background-color: #fdcae1; }
-        .wide { width: 55px; height: 35px; background-color: #cbaacb; }
-        .cereal { width: 50px; height: 90px; background-color: #9b59b6; border: 2px solid #8e44ad; }
-        .lata { width: 25px; height: 75px; background-color: #e74c3c; border-radius: 50%; }
-        .recheados { width: 80px; height: 30px; background-color: #f1c40f; border-radius: 6px; }
-        .cafe { width: 40px; height: 40px; background-color: #6d4c41; border-radius: 50%; }
-        .frasco { width: 35px; height: 50px; background-color: #1abc9c; border-radius: 50% 50% 0 0; }
-        .thin-tall { width: 20px; height: 80px; background-color: #ff7f50; border: 1px solid #d45d31; }
-        .thin-wide { width: 70px; height: 20px; background-color: #6a5acd; border: 1px solid #483d8b; }
+    #palette-scroll {
+        flex: 1; overflow-x: auto;
+        display: flex; align-items: center; gap: 8px; padding: 0 10px;
+    }
+    #palette-scroll .product { 
+        width: 55px; height: 55px; margin-bottom: 0; flex-shrink: 0;
+    }
 
-        /* paleta */
-        #productPalette { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-bottom: 10px; padding: 8px; border: 1px solid #ddd; border-radius: 8px; background-color: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.06); }
-        .palette-item { border: 3px solid transparent; cursor: pointer; width: 45px; height: 45px; border-radius: 4px; display:flex; align-items:center; justify-content:center; }
-        .palette-item.selected { border-color: var(--accent); box-shadow: 0 0 10px var(--accent); }
-
-        /* modal simples */
-        #modal { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.4); z-index: 200; }
-        #modal .card { background:#fff; padding:14px; border-radius:8px; width:320px; box-shadow:0 6px 20px rgba(0,0,0,0.2); }
-        #modal label{display:block;margin-bottom:6px;font-weight:600}
-        #modal input{width:100%;padding:8px;margin-bottom:10px}
-        #modal .actions{display:flex;gap:8px;justify-content:flex-end}
-        button{cursor:pointer}
-
-        /* responsive small */
-        @media (max-width:700px){ .shelf{height:140px} }
-
-    </style>
+    /* --- Modais --- */
+    .modal-overlay {
+        position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+        display: none; justify-content: center; align-items: center; z-index: 2000;
+    }
+    .modal-box {
+        background: #fff; padding: 15px; border-radius: 6px; width: 85%; max-width: 300px;
+        text-align: center;
+    }
+    .modal-box input { width: 100%; padding: 8px; margin: 10px 0; border: 1px solid #ccc; }
+    .modal-btns { display: flex; gap: 10px; justify-content: center; margin-top: 10px;}
+    .modal-btns button { flex:1; padding: 8px; border: none; border-radius: 4px; cursor: pointer; color:#fff;}
+    
+    .ghost { opacity: 0.4; background: #aaa !important; }
+</style>
 </head>
 <body>
 
-<h1>🛒 Simulador de Planograma — Avançado</h1>
+<header>
+    <h1>Mercado: Vista Corredor</h1>
+    <div class="header-btns">
+        <button onclick="addGondola()">+ Módulo</button>
+        <button onclick="resetPlanogram()" style="background:#c0392b">Limpar</button>
+    </div>
+</header>
 
-<div id="controls">
-    <label>Colunas: <input type="number" id="numCols" value="3" min="1" max="10"></label>
-    <label>Prateleiras (linhas): <input type="number" id="numShelves" value="4" min="1" max="10"></label>
-    <button id="buildBtn">Construir Layout</button>
+<div id="aisle-container">
+    </div>
 
-    <div style="width:1px;height:1px"></div>
-
-    <button id="exportPngBtn">Salvar como imagem (PNG)</button>
-    <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="includeUI"> Incluir controles no print</label>
+<div id="palette-container">
+    <div class="palette-header">
+        <b>Produtos</b> (Arraste para a prateleira)
+        <button class="btn-add-type" onclick="openNewTypeModal()">+ Criar Item</button>
+    </div>
+    <div id="palette-scroll">
+        <div class="product" style="background:#c0392b" data-color="#c0392b" data-name="Cola"><span class="prod-label">Cola</span></div>
+        <div class="product" style="background:#2980b9" data-color="#2980b9" data-name="Leite"><span class="prod-label">Leite</span></div>
+        <div class="product" style="background:#f39c12" data-color="#f39c12" data-name="Suco"><span class="prod-label">Suco</span></div>
+        <div class="product" style="background:#27ae60" data-color="#27ae60" data-name="Arroz"><span class="prod-label">Arroz</span></div>
+    </div>
 </div>
 
-<h3 style="text-align:center;margin-top:4px">Passo 1: Escolha o tipo de mercadoria</h3>
-<div id="productPalette">
-    <div class="palette-item small" data-type="small" title="small"></div>
-    <div class="palette-item medium" data-type="medium" title="medium"></div>
-    <div class="palette-item large" data-type="large" title="large"></div>
-    <div class="palette-item tall" data-type="tall" title="tall"></div>
-    <div class="palette-item wide" data-type="wide" title="wide"></div>
-    <div class="palette-item cereal" data-type="cereal" title="cereal"></div>
-    <div class="palette-item lata" data-type="lata" title="lata"></div>
-    <div class="palette-item recheados" data-type="recheados" title="recheados"></div>
-    <div class="palette-item cafe" data-type="cafe" title="cafe"></div>
-    <div class="palette-item frasco" data-type="frasco" title="frasco"></div>
-    <div class="palette-item thin-tall" data-type="thin-tall" title="thin-tall"></div>
-    <div class="palette-item thin-wide" data-type="thin-wide" title="thin-wide"></div>
+<div id="modalEdit" class="modal-overlay">
+    <div class="modal-box">
+        <h3>Etiqueta do Produto</h3>
+        <input type="text" id="editName" placeholder="Nome do produto">
+        <div class="modal-btns">
+            <button style="background:#c0392b" onclick="deleteItem()">Excluir</button>
+            <button style="background:#2980b9" onclick="saveItem()">Salvar</button>
+        </div>
+        <button style="background:#ccc; color:#333; margin-top:5px; width:100%; border:none; padding:8px; border-radius:4px" onclick="closeModals()">Cancelar</button>
+    </div>
 </div>
 
-<h3 style="text-align:center;margin:6px 0 0">Passo 2: Clique em qualquer SLOT vazio da prateleira para adicionar o produto. Clique no produto para editar nome. Arraste para mover.</h3>
-
-<div id="shelvesContainer"></div>
-
-<!-- modal para editar nome -->
-<div id="modal">
-    <div class="card">
-        <label for="productNameInput">Nome do produto</label>
-        <input id="productNameInput" type="text" placeholder="Ex: Cereal Snow Flakes 800g">
-        <div class="actions">
-            <button id="modalCancel">Cancelar</button>
-            <button id="modalSave">Salvar</button>
+<div id="modalNew" class="modal-overlay">
+    <div class="modal-box">
+        <h3>Novo Tipo de Produto</h3>
+        <input type="text" id="newTypeName" placeholder="Ex: Sabão em Pó">
+        <label style="font-size:12px; display:block; text-align:left">Cor da Embalagem:</label>
+        <input type="color" id="newTypeColor" value="#8e44ad" style="height:40px; padding:0">
+        <div class="modal-btns">
+            <button style="background:#27ae60" onclick="createNewType()">Criar</button>
+            <button style="background:#ccc; color:#333" onclick="closeModals()">Cancelar</button>
         </div>
     </div>
 </div>
 
 <script>
-    // Elementos
-    const shelvesContainer = document.getElementById('shelvesContainer');
-    const buildBtn = document.getElementById('buildBtn');
-    const paletteItems = document.querySelectorAll('.palette-item');
-    const exportPngBtn = document.getElementById('exportPngBtn');
-    const includeUICheck = document.getElementById('includeUI');
+    const aisle = document.getElementById('aisle-container');
+    const paletteScroll = document.getElementById('palette-scroll');
+    let currentItem = null;
 
-    const modal = document.getElementById('modal');
-    const productNameInput = document.getElementById('productNameInput');
-    const modalSave = document.getElementById('modalSave');
-    const modalCancel = document.getElementById('modalCancel');
-
-    let selectedType = null;
-    let editingItem = null; // item atualmente sendo editado
-
-    // Seleciona o tipo de produto
-    paletteItems.forEach(item => {
-        item.addEventListener('click', () => {
-            paletteItems.forEach(p => p.classList.remove('selected'));
-            item.classList.add('selected');
-            selectedType = item.dataset.type;
-        });
+    /* --- INICIO --- */
+    // Configura Paleta
+    new Sortable(paletteScroll, {
+        group: { name: 'shared', pull: 'clone', put: false },
+        sort: false, animation: 150
     });
 
-    // constrói prateleiras
-    buildBtn.addEventListener('click', () => buildLayout());
+    loadData();
 
-    function buildLayout(){
-        const cols = parseInt(document.getElementById('numCols').value);
-        const rows = parseInt(document.getElementById('numShelves').value);
+    /* --- GESTÃO DO LAYOUT --- */
+    function loadData() {
+        // Carregar Itens Customizados
+        const savedPalette = localStorage.getItem('myPalette');
+        if(savedPalette) {
+            JSON.parse(savedPalette).forEach(p => addPaletteDom(p.name, p.color));
+        }
 
-        shelvesContainer.innerHTML = '';
-        shelvesContainer.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+        // Carregar Gôndolas
+        const savedGondolas = localStorage.getItem('aisleData');
+        aisle.innerHTML = '';
+        if(savedGondolas) {
+            JSON.parse(savedGondolas).forEach(gData => createGondolaDom(gData.shelves));
+        } else {
+            // Inicia com 3 gôndolas lado a lado
+            createGondolaDom([[],[],[],[],[]]); 
+            createGondolaDom([[],[],[],[],[]]);
+            createGondolaDom([[],[],[],[],[]]);
+        }
+    }
 
-        for (let i = 0; i < rows * cols; i++) {
+    function addGondola() {
+        createGondolaDom([[],[],[],[],[]]); // 5 prateleiras vazias
+        saveState();
+        // Rola o corredor para a direita para ver a nova gôndola
+        setTimeout(() => aisle.scrollTo({ left: aisle.scrollWidth, behavior: 'smooth' }), 100);
+    }
+
+    function createGondolaDom(shelvesData) {
+        const id = document.querySelectorAll('.gondola').length + 1;
+        const div = document.createElement('div');
+        div.className = 'gondola';
+        div.innerHTML = `
+            <div class="gondola-header">
+                Módulo ${id}
+                <button class="btn-del-gondola" onclick="removeGondola(this)">×</button>
+            </div>
+            <div class="shelf-area"></div>
+        `;
+
+        const shelfArea = div.querySelector('.shelf-area');
+        
+        shelvesData.forEach(items => {
             const shelf = document.createElement('div');
             shelf.className = 'shelf';
-            shelf.dataset.index = i;
-
-            // etiqueta editavel
-            const label = document.createElement('input');
-            label.className = 'shelf-label';
-            label.type = 'text';
-            label.placeholder = `Seção ${i + 1}`;
-            shelf.appendChild(label);
-
-            // contador
-            const counter = document.createElement('div');
-            counter.className = 'shelf-counter';
-            counter.textContent = '0';
-            shelf.appendChild(counter);
-
-            const numGridCols = 15;
-            const numGridRows = 3;
-
-            for (let r = 0; r < numGridRows; r++){
-                for (let c = 0; c < numGridCols; c++){
-                    const cell = document.createElement('div');
-                    cell.className = 'shelf-cell';
-                    cell.dataset.row = r;
-                    cell.dataset.col = c;
-
-                    // permitimos drop
-                    cell.addEventListener('dragover', (ev) => ev.preventDefault());
-                    cell.addEventListener('drop', (ev) => {
-                        ev.preventDefault();
-                        const itemId = ev.dataTransfer.getData('text/plain');
-                        const item = document.getElementById(itemId);
-                        if (!item) return;
-                        // remove de onde estava e append neste cell
-                        item.parentElement && item.parentElement.removeChild(item);
-                        cell.appendChild(item);
-                        updateCounters();
-                    });
-
-                    cell.addEventListener('click', (e) => {
-                        if (e.target.classList.contains('shelf-label')) return;
-                        // se clicou na célula vazia, adiciona produto
-                        if (!cell.querySelector('.item')) addProduct(cell);
-                    });
-                    shelf.appendChild(cell);
-                }
-            }
-            shelvesContainer.appendChild(shelf);
-        }
-        updateCounters();
-    }
-
-    // gera id único
-    function uid(prefix='it'){ return prefix + Math.random().toString(36).slice(2,9); }
-
-    function addProduct(cell){
-        if (!selectedType){ alert('Escolha primeiro um tipo de mercadoria na paleta!'); return; }
-        if (cell.querySelector('.item')) return; // já existe
-
-        const item = document.createElement('div');
-        const id = uid('item');
-        item.id = id;
-        item.classList.add('item', selectedType);
-        item.setAttribute('draggable', 'true');
-        item.dataset.type = selectedType;
-
-        // label interno (nome)
-        const nameTag = document.createElement('div');
-        nameTag.className = 'name';
-        nameTag.textContent = '';
-        item.appendChild(nameTag);
-
-        // botão remover
-        const removeBtn = document.createElement('div');
-        removeBtn.className = 'remove-btn';
-        removeBtn.innerHTML = '✕';
-        removeBtn.title = 'Remover';
-        removeBtn.addEventListener('click', (ev) => { ev.stopPropagation(); item.remove(); updateCounters(); });
-        item.appendChild(removeBtn);
-
-        // eventos drag
-        item.addEventListener('dragstart', (ev) => {
-            ev.dataTransfer.setData('text/plain', item.id);
-            // opcional: tiny ghost
-            const crt = item.cloneNode(true);
-            crt.style.position='absolute'; crt.style.left='-9999px'; crt.style.top='-9999px';
-            document.body.appendChild(crt);
-            ev.dataTransfer.setDragImage(crt, 10, 10);
-            setTimeout(()=> document.body.removeChild(crt), 0);
-        });
-
-        // clique abre modal de edição de nome
-        item.addEventListener('click', (ev) => {
-            ev.stopPropagation();
-            openEditModal(item);
-        });
-
-        cell.appendChild(item);
-        updateCounters();
-    }
-
-    // abre modal para editar nome do produto
-    function openEditModal(item){
-        editingItem = item;
-        const current = item.dataset.name || '';
-        productNameInput.value = current;
-        modal.style.display = 'flex';
-        productNameInput.focus();
-        productNameInput.select();
-    }
-
-    modalCancel.addEventListener('click', () => { editingItem = null; modal.style.display='none'; });
-    modalSave.addEventListener('click', () => {
-        if (!editingItem) return;
-        const val = productNameInput.value.trim();
-        if (val){ editingItem.dataset.name = val; editingItem.querySelector('.name').textContent = val; editingItem.classList.add('has-name'); }
-        else { delete editingItem.dataset.name; editingItem.querySelector('.name').textContent = ''; editingItem.classList.remove('has-name'); }
-        editingItem = null;
-        modal.style.display = 'none';
-    });
-
-    // contadores por prateleira
-    function updateCounters(){
-        document.querySelectorAll('.shelf').forEach(shelf => {
-            const count = shelf.querySelectorAll('.item').length;
-            const c = shelf.querySelector('.shelf-counter');
-            if (c) c.textContent = count;
-        });
-    }
-
-    // exportar imagem usando html2canvas via CDN
-    async function loadHtml2Canvas(){
-        if (window.html2canvas) return window.html2canvas;
-        return new Promise((res, rej) => {
-            const s = document.createElement('script');
-            s.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
-            s.onload = () => res(window.html2canvas || window.html2canvasDefault || window.html2canvas);
-            s.onerror = rej;
-            document.head.appendChild(s);
-        });
-    }
-
-    exportPngBtn.addEventListener('click', async () => {
-        const includeUI = includeUICheck.checked;
-        // elemento a capturar
-        let target = includeUI ? document.body : shelvesContainer;
-        try{
-            await loadHtml2Canvas();
-            html2canvas(target, { scale: 2 }).then(canvas => {
-                const a = document.createElement('a');
-                a.href = canvas.toDataURL('image/png');
-                a.download = 'planograma.png';
-                a.click();
+            
+            items.forEach(item => {
+                shelf.appendChild(createProductDom(item.name, item.color));
             });
-        } catch(e){
-            alert('Falha ao carregar a biblioteca de screenshot. Verifique conexão ou console.');
-            console.error(e);
+
+            shelfArea.appendChild(shelf);
+
+            // Sortable na prateleira
+            new Sortable(shelf, {
+                group: 'shared',
+                animation: 150,
+                ghostClass: 'ghost',
+                onAdd: (evt) => {
+                    const el = evt.item;
+                    // Atualiza visual e eventos ao soltar
+                    el.style.background = el.dataset.color;
+                    el.innerHTML = `<span class="prod-label">${el.dataset.name}</span>`;
+                    el.onclick = () => openEdit(el);
+                    saveState();
+                },
+                onUpdate: () => saveState(),
+                onRemove: () => saveState()
+            });
+        });
+
+        aisle.appendChild(div);
+    }
+
+    function removeGondola(btn) {
+        if(confirm("Remover este módulo?")) {
+            btn.closest('.gondola').remove();
+            saveState();
         }
-    });
+    }
 
-    // Inicializa
-    buildLayout();
+    /* --- PRODUTOS --- */
+    function createProductDom(name, color) {
+        const el = document.createElement('div');
+        el.className = 'product';
+        el.style.background = color;
+        el.dataset.name = name;
+        el.dataset.color = color;
+        el.innerHTML = `<span class="prod-label">${name}</span>`;
+        el.onclick = () => openEdit(el);
+        return el;
+    }
 
-    // clique fora fecha modal
-    window.addEventListener('click', (ev) => { if (ev.target === modal) { editingItem = null; modal.style.display='none'; } });
+    function addPaletteDom(name, color) {
+        const el = createProductDom(name, color);
+        el.onclick = null; // Paleta não edita
+        paletteScroll.appendChild(el);
+    }
 
+    /* --- MODAIS --- */
+    function openEdit(el) {
+        currentItem = el;
+        document.getElementById('editName').value = el.dataset.name;
+        document.getElementById('modalEdit').style.display = 'flex';
+    }
+
+    function saveItem() {
+        if(currentItem) {
+            const newName = document.getElementById('editName').value;
+            currentItem.dataset.name = newName;
+            currentItem.querySelector('.prod-label').innerText = newName;
+            saveState();
+        }
+        closeModals();
+    }
+
+    function deleteItem() {
+        if(currentItem) currentItem.remove();
+        saveState();
+        closeModals();
+    }
+
+    function openNewTypeModal() {
+        document.getElementById('newTypeName').value = '';
+        document.getElementById('modalNew').style.display = 'flex';
+    }
+
+    function createNewType() {
+        const name = document.getElementById('newTypeName').value || 'Item';
+        const color = document.getElementById('newTypeColor').value;
+        addPaletteDom(name, color);
+
+        // Salva paleta
+        const list = JSON.parse(localStorage.getItem('myPalette') || '[]');
+        list.push({name, color});
+        localStorage.setItem('myPalette', JSON.stringify(list));
+        
+        closeModals();
+    }
+
+    function closeModals() {
+        document.querySelectorAll('.modal-overlay').forEach(m => m.style.display='none');
+        currentItem = null;
+    }
+
+    /* --- SAVE --- */
+    function saveState() {
+        const data = [];
+        document.querySelectorAll('.gondola').forEach(g => {
+            const sData = [];
+            g.querySelectorAll('.shelf').forEach(s => {
+                const pData = [];
+                s.querySelectorAll('.product').forEach(p => {
+                    pData.push({ name: p.dataset.name, color: p.dataset.color });
+                });
+                sData.push(pData);
+            });
+            data.push({ shelves: sData });
+        });
+        localStorage.setItem('aisleData', JSON.stringify(data));
+    }
+
+    function resetPlanogram() {
+        if(confirm("Limpar todo o corredor?")) {
+            localStorage.removeItem('aisleData');
+            location.reload();
+        }
+    }
 </script>
 </body>
 </html>
